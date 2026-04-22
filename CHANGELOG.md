@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-04-23
+
+### Fixed
+- **Recreate missing task-store directories before lock/save** — file-backed stores now ensure the parent `.pi/tasks` directory exists both when acquiring the `.lock` file and when saving the JSON store. This prevents `ENOENT` crashes during auto-clear and other mutations if the project `.pi/tasks` directory was missing or deleted.
+
 ## [0.4.2] - 2026-03-24
 
 ### Added

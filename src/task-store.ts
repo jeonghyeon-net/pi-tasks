@@ -14,8 +14,13 @@ const TASKS_DIR = join(homedir(), ".pi", "tasks");
 const LOCK_RETRY_MS = 50;
 const LOCK_MAX_RETRIES = 100; // 5s max
 
+function ensureParentDir(path: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+}
+
 /** Simple file-based locking. */
 function acquireLock(lockPath: string): void {
+  ensureParentDir(lockPath);
   for (let i = 0; i < LOCK_MAX_RETRIES; i++) {
     try {
       // O_EXCL: fail if file exists
@@ -85,6 +90,7 @@ export class TaskStore {
   /** Write store to disk atomically (file-backed mode only). */
   private save(): void {
     if (!this.filePath) return;
+    ensureParentDir(this.filePath);
     const data: TaskStoreData = {
       nextId: this.nextId,
       tasks: Array.from(this.tasks.values()),

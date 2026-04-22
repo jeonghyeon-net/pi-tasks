@@ -1,6 +1,6 @@
-import { readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { TaskStore } from "../src/task-store.js";
 
@@ -412,5 +412,25 @@ describe("TaskStore (absolute path)", () => {
 
     const raw = JSON.parse(readFileSync(absFilePath, "utf-8"));
     expect(raw.tasks).toHaveLength(2);
+  });
+
+  it("recreates a missing parent directory before locking and saving", () => {
+    const tempRoot = mkdtempSync(join(tmpdir(), "pi-tasks-missing-dir-"));
+    const nestedFilePath = join(tempRoot, "nested", "tasks.json");
+    const store = new TaskStore(nestedFilePath);
+
+    store.create("Pending", "Desc");
+    store.create("Completed", "Desc");
+    store.update("2", { status: "completed" });
+
+    rmSync(dirname(nestedFilePath), { recursive: true, force: true });
+
+    expect(() => store.clearCompleted()).not.toThrow();
+
+    const reloaded = new TaskStore(nestedFilePath);
+    expect(reloaded.list()).toHaveLength(1);
+    expect(reloaded.get("1")?.subject).toBe("Pending");
+
+    rmSync(tempRoot, { recursive: true, force: true });
   });
 });
