@@ -280,6 +280,7 @@ export default function (pi: ExtensionAPI) {
     currentTurn++;
     latestCtx = ctx;
     widget.setUICtx(ctx.ui as UICtx);
+    widget.setForegroundBusy(true);
     upgradeStoreIfNeeded(ctx);
     if (autoClear.onTurnStart(currentTurn)) widget.update();
   });
@@ -366,6 +367,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("tool_execution_start", async (_event, ctx) => {
     latestCtx = ctx;
     widget.setUICtx(ctx.ui as UICtx);
+    widget.setForegroundBusy(true);
     upgradeStoreIfNeeded(ctx);
     widget.update();
   });
