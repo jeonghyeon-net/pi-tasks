@@ -5,7 +5,7 @@
  *   ✔ completed tasks (strikethrough + dim)
  *   ◐ in_progress tasks
  *   ◻ pending tasks
- *   ✳/✽ actively executing task (star spinner with activeForm text)
+ *   Claude Code source spinner for actively executing task text
  *
  * Active task animation is intentionally paused while the main pi session is idle
  * (waiting for user input) to avoid implying foreground work is still running.
@@ -13,6 +13,7 @@
 
 import { truncateToWidth } from "@mariozechner/pi-tui";
 import type { TaskStore } from "../task-store.js";
+import { SPINNER, SPINNER_INTERVAL_MS } from "./spinner.js";
 
 // ---- Types ----
 
@@ -30,9 +31,6 @@ export type UICtx = {
     options?: { placement?: "aboveEditor" | "belowEditor" },
   ): void;
 };
-
-/** Star spinner frames for animated active task indicator (matches Claude Code). */
-const SPINNER = ["✳", "✴", "✵", "✶", "✷", "✸", "✹", "✺", "✻", "✼", "✽"];
 
 const MAX_VISIBLE_TASKS = 10;
 
@@ -117,7 +115,7 @@ export class TaskWidget {
   /** Ensure the widget update timer is running. */
   ensureTimer() {
     if (!this.widgetInterval) {
-      this.widgetInterval = setInterval(() => this.update(), 80);
+      this.widgetInterval = setInterval(() => this.update(), SPINNER_INTERVAL_MS);
     }
   }
 
