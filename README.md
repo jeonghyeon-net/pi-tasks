@@ -1,4 +1,4 @@
-# @tintinweb/pi-tasks
+# @jeonghyeon.net/pi-tasks
 
 A [pi](https://pi.dev) extension that brings **Claude Code-style task tracking and coordination** to pi. Track multi-step work with structured tasks, dependency management, and a persistent visual widget.
 
@@ -13,19 +13,19 @@ https://github.com/user-attachments/assets/1d0ee87a-e0a5-4bfa-a9b9-2f9144cb905b
 ## Features
 
 - **7 LLM-callable tools** — `TaskCreate`, `TaskList`, `TaskGet`, `TaskUpdate`, `TaskOutput`, `TaskStop`, `TaskExecute` — matching Claude Code's exact tool specs and descriptions
-- **Persistent widget** — live task list above the editor with `✔`/`◼`/`◻` status icons, task numbers (`#1`, `#2`, …), strikethrough for completed tasks, star spinner (`✳✽`) for active tasks with elapsed time and token counts
+- **Persistent widget** — live task list above the editor with `✔`/`◐`/`◻` status icons, task numbers (`#1`, `#2`, …), strikethrough for completed tasks, star spinner (`✳✽`) for active tasks with elapsed time and token counts. The spinner pauses while pi is idle and waiting for user input.
 - **System-reminder injection** — periodic `<system-reminder>` nudges appended to tool results when task tools haven't been used recently (matches Claude Code's behavior exactly)
 - **Prompt guidelines** — workflow contract encoded in tool descriptions, nudging the LLM at the point of tool use
 - **Dependency management** — bidirectional `blocks`/`blockedBy` relationships with warnings for cycles, self-deps, and dangling references
 - **Shared task lists** — multiple pi sessions can share a file-backed task list for agent team coordination
 - **File locking** — concurrent access is safe when multiple sessions share a task list
 - **Background process tracking** — track spawned processes with output buffering, blocking wait, and graceful stop
-- **Subagent integration** — tasks with `agentType` can be executed as subagents via `TaskExecute` (requires [@tintinweb/pi-subagents](https://github.com/tintinweb/pi-subagents)). Auto-cascade mode flows through the task DAG automatically when enabled.
+- **Subagent integration** — tasks with `agentType` can be executed as subagents via `TaskExecute` (requires [@jeonghyeon.net/pi-subagents](https://github.com/tintinweb/pi-subagents)). Auto-cascade mode flows through the task DAG automatically when enabled.
 
 ## Install
 
 ```bash
-pi install npm:@tintinweb/pi-tasks
+pi install npm:@jeonghyeon.net/pi-tasks
 ```
 
 Or load directly for development:
@@ -49,9 +49,9 @@ The extension renders a persistent widget above the editor:
 | Icon | Meaning |
 |------|---------|
 | `✔` | Completed (strikethrough + dim) |
-| `◼` | In-progress (not actively executing) |
+| `◐` | In-progress / paused while pi is idle |
 | `◻` | Pending |
-| `✳`/`✽` | Animated star spinner — actively executing task (shows `activeForm` text, elapsed time, token counts) |
+| `✳`/`✽` | Animated star spinner — shown only while the main pi session is actively working (shows `activeForm` text, elapsed time, token counts) |
 
 ## Tools
 
@@ -148,7 +148,7 @@ Stop a running background task process. Sends SIGTERM, waits 5 seconds, then SIG
 
 ### `TaskExecute`
 
-Execute one or more tasks as background subagents. Requires [@tintinweb/pi-subagents](https://github.com/tintinweb/pi-subagents).
+Execute one or more tasks as background subagents. Requires [@jeonghyeon.net/pi-subagents](https://github.com/tintinweb/pi-subagents).
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
@@ -246,9 +246,9 @@ Tasks
 - **Clear all** — remove all tasks regardless of status
 - **Settings** — configure task storage, auto-cascade, and auto-clear completed tasks (saved to `tasks-config.json`)
 
-## Cross-extension Communication with [`@tintinweb/pi-subagents`](https://github.com/tintinweb/pi-subagents)
+## Cross-extension Communication with [`@jeonghyeon.net/pi-subagents`](https://github.com/tintinweb/pi-subagents)
 
-[`pi-tasks`](https://github.com/tintinweb/pi-tasks) communicates with [`@tintinweb/pi-subagents`](https://github.com/tintinweb/pi-subagents) via pi's eventbus using a scoped request/reply RPC protocol. No shared global state — just events.
+[`pi-tasks`](https://github.com/tintinweb/pi-tasks) communicates with [`@jeonghyeon.net/pi-subagents`](https://github.com/tintinweb/pi-subagents) via pi's eventbus using a scoped request/reply RPC protocol. No shared global state — just events.
 
 ### Presence Detection
 

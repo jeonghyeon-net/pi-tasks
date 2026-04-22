@@ -3,9 +3,12 @@
  *
  * Display style matches Claude Code's task list:
  *   ✔ completed tasks (strikethrough + dim)
- *   ◼ in_progress tasks
+ *   ◐ in_progress tasks
  *   ◻ pending tasks
  *   ✳/✽ actively executing task (star spinner with activeForm text)
+ *
+ * Active task animation is intentionally paused while the main pi session is idle
+ * (waiting for user input) to avoid implying foreground work is still running.
  */
 
 import { truncateToWidth } from "@mariozechner/pi-tui";
@@ -70,6 +73,8 @@ export class TaskWidget {
   private metrics = new Map<string, TaskMetrics>();
   /** Cached TUI instance for requestRender() calls. */
   private tui: any | undefined;
+  /** Whether the foreground pi session is currently working. */
+  private foregroundBusy = false;
   /** Whether the widget callback is currently registered. */
   private widgetRegistered = false;
 
@@ -116,6 +121,13 @@ export class TaskWidget {
     }
   }
 
+  /** Tell the widget whether the main pi session is currently working. */
+  setForegroundBusy(busy: boolean) {
+    if (this.foregroundBusy === busy) return;
+    this.foregroundBusy = busy;
+    this.update();
+  }
+
   /** Build widget lines from current live state. Called from the render callback. */
   private renderWidget(tui: any, theme: Theme): string[] {
     const tasks = this.store.list();
@@ -140,15 +152,16 @@ export class TaskWidget {
     const visible = tasks.slice(0, MAX_VISIBLE_TASKS);
     for (let i = 0; i < visible.length; i++) {
       const task = visible[i];
-      const isActive = this.activeTaskIds.has(task.id) && task.status === "in_progress";
+      const isTrackedActive = this.activeTaskIds.has(task.id) && task.status === "in_progress";
+      const isAnimatedActive = isTrackedActive && this.foregroundBusy;
 
       let icon: string;
-      if (isActive) {
+      if (isAnimatedActive) {
         icon = theme.fg("accent", spinnerChar);
       } else if (task.status === "completed") {
         icon = theme.fg("success", "✔");
       } else if (task.status === "in_progress") {
-        icon = theme.fg("accent", "◼");
+        icon = theme.fg("accent", "◐");
       } else {
         icon = "◻";
       }
@@ -165,7 +178,7 @@ export class TaskWidget {
       }
 
       let text: string;
-      if (isActive) {
+      if (isTrackedActive) {
         const form = task.activeForm || task.subject;
         const agentId = task.metadata?.agentId;
         const agentLabel = agentId ? ` (agent ${agentId.slice(0, 5)})` : "";
@@ -180,7 +193,8 @@ export class TaskWidget {
             ? ` ${theme.fg("dim", `(${elapsed} · ${tokenParts.join(" ")})`)}`
             : ` ${theme.fg("dim", `(${elapsed})`)}`;
         }
-        text = `  ${icon} ${theme.fg("dim", "#" + task.id)} ${theme.fg("accent", form + agentLabel + "…")}${stats}`;
+        const label = isAnimatedActive ? form + agentLabel + "…" : form + agentLabel;
+        text = `  ${icon} ${theme.fg("dim", "#" + task.id)} ${theme.fg("accent", label)}${stats}`;
       } else if (task.status === "completed") {
         text = `  ${icon} ${theme.fg("dim", theme.strikethrough("#" + task.id + " " + task.subject))}`;
       } else {
@@ -227,11 +241,12 @@ export class TaskWidget {
       }
     }
 
-    // Check if any task needs animation
-    const hasActiveSpinner = tasks.some(t => this.activeTaskIds.has(t.id) && t.status === "in_progress");
-    if (hasActiveSpinner) {
+    // Check if any task needs animation. Active tasks stay visible while idle,
+    // but the spinner only animates while the main pi session is actually working.
+    const hasAnimatedSpinner = this.foregroundBusy && tasks.some(t => this.activeTaskIds.has(t.id) && t.status === "in_progress");
+    if (hasAnimatedSpinner) {
       this.ensureTimer();
-    } else if (!hasActiveSpinner && this.widgetInterval) {
+    } else if (!hasAnimatedSpinner && this.widgetInterval) {
       clearInterval(this.widgetInterval);
       this.widgetInterval = undefined;
     }

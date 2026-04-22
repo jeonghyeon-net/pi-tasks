@@ -1,5 +1,5 @@
 /**
- * @tintinweb/pi-tasks — A pi extension providing Claude Code-style task tracking and coordination.
+ * @jeonghyeon.net/pi-tasks — A pi extension providing Claude Code-style task tracking and coordination.
  *
  * Tools:
  *   TaskCreate   — Create a structured task
@@ -8,7 +8,7 @@
  *   TaskUpdate   — Update task fields, status, dependencies
  *   TaskOutput   — Get output from a background task process
  *   TaskStop     — Stop a running background task process
- *   TaskExecute  — Execute tasks as subagents (requires @tintinweb/pi-subagents)
+ *   TaskExecute  — Execute tasks as subagents (requires @jeonghyeon.net/pi-subagents)
  *
  * Commands:
  *   /tasks       — Interactive task management menu
@@ -114,14 +114,14 @@ export default function (pi: ExtensionAPI) {
     });
   }
 
-  /** Spawn a subagent via pi.events RPC (requires @tintinweb/pi-subagents extension). */
+  /** Spawn a subagent via pi.events RPC (requires @jeonghyeon.net/pi-subagents extension). */
   function spawnSubagent(type: string, prompt: string, options?: any): Promise<string> {
     debug("spawn:call", { type, options: { ...options, prompt: undefined } });
     return rpcCall<{ id: string }>("subagents:rpc:spawn", { type, prompt, options }, 30_000)
       .then(d => { debug("spawn:ok", d); return d.id; });
   }
 
-  /** Stop a subagent via pi.events RPC (requires @tintinweb/pi-subagents extension). */
+  /** Stop a subagent via pi.events RPC (requires @jeonghyeon.net/pi-subagents extension). */
   function stopSubagent(agentId: string): Promise<void> {
     return rpcCall<void>("subagents:rpc:stop", { agentId }, 10_000).catch(() => {});
   }
@@ -140,14 +140,14 @@ export default function (pi: ExtensionAPI) {
       const remoteVersion = (raw as any)?.data?.version as number | undefined;
       if (remoteVersion === undefined) {
         pendingWarning =
-          "@tintinweb/pi-subagents is outdated — please update for task execution support.";
+          "@jeonghyeon.net/pi-subagents is outdated — please update for task execution support.";
       } else if (remoteVersion > PROTOCOL_VERSION) {
         pendingWarning =
-          `@tintinweb/pi-tasks is outdated (protocol v${PROTOCOL_VERSION}, ` +
+          `@jeonghyeon.net/pi-tasks is outdated (protocol v${PROTOCOL_VERSION}, ` +
           `pi-subagents has v${remoteVersion}) — please update for task execution support.`;
       } else if (remoteVersion < PROTOCOL_VERSION) {
         pendingWarning =
-          `@tintinweb/pi-subagents is outdated (protocol v${remoteVersion}, ` +
+          `@jeonghyeon.net/pi-subagents is outdated (protocol v${remoteVersion}, ` +
           `pi-tasks has v${PROTOCOL_VERSION}) — please update for task execution support.`;
       } else {
         subagentsAvailable = true;
@@ -287,6 +287,7 @@ export default function (pi: ExtensionAPI) {
   // ── Token usage tracking ──
   // Feed per-turn token counts from assistant messages into the widget.
   pi.on("turn_end", async (event) => {
+    widget.setForegroundBusy(false);
     const msg = event.message as any;
     if (msg?.role === "assistant" && msg.usage) {
       widget.addTokenUsage(msg.usage.input ?? 0, msg.usage.output ?? 0);
@@ -325,6 +326,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("before_agent_start", async (_event, ctx) => {
     latestCtx = ctx;
     widget.setUICtx(ctx.ui as UICtx);
+    widget.setForegroundBusy(true);
     upgradeStoreIfNeeded(ctx);
     showPersistedTasks();
     if (pendingWarning) {
@@ -348,6 +350,7 @@ export default function (pi: ExtensionAPI) {
     currentTurn = 0;
     lastTaskToolUseTurn = 0;
     reminderInjectedThisCycle = false;
+    widget.setForegroundBusy(false);
     autoClear.reset();
 
     // Memory mode has no file-backed store to switch — clear explicitly on /new
@@ -868,7 +871,7 @@ Set up task dependencies:
       if (!subagentsAvailable) {
         return textResult(
           "Subagent execution is currently unavailable. " +
-          "Ensure the @tintinweb/pi-subagents extension is loaded and try again."
+          "Ensure the @jeonghyeon.net/pi-subagents extension is loaded and try again."
         );
       }
 
@@ -997,7 +1000,7 @@ Set up task dependencies:
         const statusIcon = (status: string) => {
           switch (status) {
             case "completed": return "✔";
-            case "in_progress": return "◼";
+            case "in_progress": return "◐";
             default: return "◻";
           }
         };

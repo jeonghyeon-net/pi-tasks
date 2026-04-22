@@ -79,13 +79,13 @@ describe("TaskWidget", () => {
     expect(lines[1]).toContain("Do something");
   });
 
-  it("renders in-progress tasks with ◼ icon", () => {
+  it("renders in-progress tasks with ◐ icon", () => {
     store.create("Working on it", "Desc");
     store.update("1", { status: "in_progress" });
     widget.update();
 
     const lines = renderWidget(ui.state);
-    expect(lines[1]).toContain("◼");
+    expect(lines[1]).toContain("◐");
     expect(lines[1]).toContain("Working on it");
   });
 
@@ -99,16 +99,26 @@ describe("TaskWidget", () => {
     expect(lines[1]).toContain("~~#1 Done task~~");
   });
 
-  it("renders active tasks with spinner icon", () => {
+  it("renders active tasks with spinner icon while pi is busy", () => {
+    store.create("Running thing", "Desc", "Processing data");
+    store.update("1", { status: "in_progress" });
+    widget.setActiveTask("1", true);
+    widget.setForegroundBusy(true);
+
+    const lines = renderWidget(ui.state);
+    expect(lines[1]).toContain("Processing data…");
+    expect(lines[1]).not.toContain("◐");
+  });
+
+  it("pauses active spinner while pi is idle", () => {
     store.create("Running thing", "Desc", "Processing data");
     store.update("1", { status: "in_progress" });
     widget.setActiveTask("1", true);
 
     const lines = renderWidget(ui.state);
-    // Should show activeForm text with "…" suffix
-    expect(lines[1]).toContain("Processing data…");
-    // Should NOT show ◼ for active task
-    expect(lines[1]).not.toContain("◼");
+    expect(lines[1]).toContain("◐");
+    expect(lines[1]).toContain("Processing data");
+    expect(lines[1]).not.toContain("Processing data…");
   });
 
   it("shows blocked-by info for pending tasks", () => {
@@ -175,6 +185,7 @@ describe("TaskWidget", () => {
     store.create("Active task", "Desc", "Running");
     store.update("1", { status: "in_progress" });
     widget.setActiveTask("1", true);
+    widget.setForegroundBusy(true);
 
     widget.addTokenUsage(1000, 500);
     widget.addTokenUsage(500, 300);
@@ -189,6 +200,7 @@ describe("TaskWidget", () => {
     store.create("Task", "Desc", "Doing work");
     store.update("1", { status: "in_progress" });
     widget.setActiveTask("1", true);
+    widget.setForegroundBusy(true);
 
     // Should be active (spinner)
     let lines = renderWidget(ui.state);
@@ -196,8 +208,7 @@ describe("TaskWidget", () => {
 
     widget.setActiveTask("1", false);
     lines = renderWidget(ui.state);
-    // Should now show as regular in_progress (◼)
-    expect(lines[1]).toContain("◼");
+    expect(lines[1]).toContain("◐");
     expect(lines[1]).not.toContain("Doing work…");
   });
 
@@ -223,6 +234,7 @@ describe("TaskWidget", () => {
     store.update("2", { status: "in_progress" });
     widget.setActiveTask("1", true);
     widget.setActiveTask("2", true);
+    widget.setForegroundBusy(true);
 
     const lines = renderWidget(ui.state);
     expect(lines[1]).toContain("Processing A…");
@@ -258,6 +270,7 @@ describe("TaskWidget", () => {
     store.create("My Subject", "Desc");
     store.update("1", { status: "in_progress" });
     widget.setActiveTask("1", true);
+    widget.setForegroundBusy(true);
 
     const lines = renderWidget(ui.state);
     expect(lines[1]).toContain("My Subject…");
@@ -267,6 +280,7 @@ describe("TaskWidget", () => {
     store.create("No tokens", "Desc", "Working");
     store.update("1", { status: "in_progress" });
     widget.setActiveTask("1", true);
+    widget.setForegroundBusy(true);
 
     // No addTokenUsage calls — tokens stay at 0
     vi.advanceTimersByTime(5000);
